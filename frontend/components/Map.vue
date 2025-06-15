@@ -9,8 +9,23 @@ import { Overlay } from 'ol'
 import AppSidebar from './AppSidebar.vue'
 import Soldier from './Soldier.vue'
 import { createApp } from 'vue'
+import { info } from 'autoprefixer'
 const center = ref([3.0588, 36.7538])
 const projection = ref('EPSG:4326')
+const randomName = () => {
+  const noms = ['MIKAKDA', 'FADEL', 'HADAD', 'labdi', 'BATACHE']
+  const prenoms = ['AISSA', 'ALI', 'RABEH', 'MOHAMED', 'ABDALLAH']
+  const grades = ['COLONEL', 'COMMANDANT', 'Lieutenant', 'CAPITEN']
+  const unites = ['ENPEI', 'DAT', 'TACTIQUE','SPACIAL_FORCE', 'AVIATION']
+  const status= ['mort','vivant','vivant','vivant','mort']
+  return {
+    nom: noms[Math.floor(Math.random() * noms.length)],
+    prenom: prenoms[Math.floor(Math.random() * prenoms.length)],
+    grade: grades[Math.floor(Math.random() * grades.length)],
+    unite: unites[Math.floor(Math.random() * unites.length)],
+    status: status[Math.floor(Math.random() * status.length)],
+  }
+}
 
 const zoom = ref(12)
 const rotation = ref(0)
@@ -21,12 +36,17 @@ const soldierLayer = ref(null)
 const movementInterval = ref(null)
 const soldierOverlays = ref([])
 
-const createSoldierOverlay = (coordinates) => {
+const createSoldierOverlay = (coordinates,info,soldierId) => {
   const element = document.createElement('div');
-  const soldierId = `SOL-${soldiers.value.length + 1}`;
+  
   const soldierComponent = createApp(Soldier, {
-    id: soldierId,
-    position: { x: coordinates[0], y: coordinates[1] } 
+  id:soldierId,
+    position: { x: coordinates[0], y: coordinates[1] }, 
+    nom: info.nom,
+    prenom:info.prenom,
+    grade: info.grade,
+    unite: info.unite,
+    status: info.status,
   });
   soldierComponent.mount(element);
   const overlay = new Overlay({
@@ -38,7 +58,7 @@ const createSoldierOverlay = (coordinates) => {
   return {
     overlay,
     component: soldierComponent,
-    id: soldierId
+    id: soldierId,
   };
 };
 
@@ -49,20 +69,23 @@ const addRandomSoldier = () => {
   const distance = Math.random() * radius;
   const x = algiersCenter[0] + distance * Math.cos(angle);
   const y = algiersCenter[1] + distance * Math.sin(angle);
-  const soldierOverlay = createSoldierOverlay([x, y]);
+ 
+  const info = randomName();
+  const soldierId = `SOL-${soldiers.value.length + 1}`;
+  const soldierOverlay = createSoldierOverlay([x, y], info, soldierId)
   map.value.addOverlay(soldierOverlay.overlay);
   soldierOverlays.value.push(soldierOverlay);
   const soldier = new Feature({
     geometry: new Point([x, y]),
     properties: {
       id: soldierOverlay.id,
-      type: 'soldier'
+      ...info
     }
   });
   
   soldiers.value.push(soldier);
 };
-
+ 
 const moveSoldier = (soldier) => {
   const algiersCenter = [3.0588, 36.7538];
   const currentCoords = soldier.getGeometry().getCoordinates();
@@ -137,6 +160,36 @@ const stopSoldierMovement = () => {
     movementInterval.value = null;
   }
 };
+//ajouter un soldat bouger dynamiquement 
+const addRealSoldier = async () => {
+  try {
+    const gps = await $fetch('http://localhost:8000/api/last-gps') // adresse backend
+    const x = parseFloat(gps.lon)
+    const y = parseFloat(gps.lat)
+
+    const soldierOverlay = createSoldierOverlay([x, y])
+    map.value.addOverlay(soldierOverlay.overlay)
+    soldierOverlays.value.push(soldierOverlay)
+
+    const soldier = new Feature({
+      geometry: new Point([x, y]),
+      properties: {
+        id: soldierOverlay.id,
+        type: 'real',
+        nom: 'Dakich',
+        prenom: 'Zin',
+        grade: 'comandant',
+        unite: 'enpei',
+        status:'vivant',
+        position:{lat: y,  lon:x,},
+      }
+    })
+
+    soldiers.value.push(soldier)
+  } catch (error) {
+    console.error('Erreur lors de la récupération de la position GPS :', error)
+  }
+}
 
 onMounted(() => {
   map.value = new Map({
@@ -199,6 +252,13 @@ onUnmounted(() => {
         >
           Stop Movement
         </button>
+        <button
+          @click="addRealSoldier"
+          class="bg-purple-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-purple-600 transition-colors"
+          >
+          Add Real Soldier
+         </button>
+    
       </div>
     </div>
   </SidebarProvider>
