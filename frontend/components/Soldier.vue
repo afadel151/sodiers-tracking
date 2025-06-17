@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -10,24 +11,24 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 
-interface Position {
-  x: number;
-  y: number;
-}
-
-interface Props {
+// ✅ Fusion des deux interfaces dans un seul `defineProps`
+const props = defineProps<{
   id: string;
-  position: Position;
-}
+  position: { x: number; y: number };
+  nom: string;
+  prenom: string;
+  grade: string;
+  unite: string;
+}>()
 
-const props = defineProps<Props>();
-const isHovered = ref(false);
-const isDialogOpen = ref(false);
+const isHovered = ref(false)
+const isDialogOpen = ref(false)
 
 const formatCoordinates = (x: number, y: number) => {
-  return `${x.toFixed(4)}, ${y.toFixed(4)}`;
-};
+  return `${x.toFixed(4)}, ${y.toFixed(4)}`
+}
 </script>
+
 
 <template>
   <div class="relative group" @mouseenter="isHovered = true" @mouseleave="isHovered = false">
@@ -62,37 +63,37 @@ const formatCoordinates = (x: number, y: number) => {
                 {{ formatCoordinates(position.x, position.y) }}
               </span>
             </div>
-            <div class="flex items-center gap-2">
+            <!--<div class="flex items-center gap-2">
               <div class="font-medium w-20">Battery</div>
               <div class="w-full bg-gray-200 rounded-full h-2.5">
                 <div class="bg-blue-600 h-2.5 rounded-full" style="width: 85%"></div>
               </div>
-            </div>
+            </div>-->
           </div>
           <!-- Right side (4 items) -->
           <div class="col-span-3 flex flex-col gap-4">
             <div class="flex items-center gap-2">
               <div class="font-medium w-20">Nom</div>
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                John
+                {{nom}}
               </span>
             </div>
             <div class="flex items-center gap-2">
               <div class="font-medium w-20">Prenom</div>
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                Doe
+               {{prenom}}
               </span>
             </div>
             <div class="flex items-center gap-2">
               <div class="font-medium w-20">Grade</div>
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                soldat
+                {{grade}}
               </span>
             </div>
             <div class="flex items-center gap-2">
               <div class="font-medium w-20">Unite</div>
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                ENPEI
+                {{unite}}
               </span>
             </div>
           </div>
